@@ -23,3 +23,7 @@ include_directories(
 add_executable(client_node src/tcp_client.cpp)
 add_dependencies(client_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 target_link_libraries(client_node ${catkin_LIBRARIES} )
+
+add_executable(server_node src/tcp_server.cpp)
+add_dependencies(server_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+target_link_libraries(server_node ${catkin_LIBRARIES} )

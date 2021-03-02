@@ -1,0 +1,9 @@
+<!-- -->
+<launch>
+	<node pkg="tcp" type="server_node" name="server_node" output="screen">
+	</node>
+	
+	<node pkg="tcp" type="client_node" name="client_node" output="screen">
+	</node>
+
+</launch>
