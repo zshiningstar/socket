@@ -10,10 +10,10 @@
 #include <fcntl.h>
 #include <sys/shm.h>
 
-#define    MYPORT     8080   //端口号
+#define    MYPORT     8081   //端口号
 #define    BUF_SIZE   1024   //数据缓冲区最大长度
 
-char* SERVER_IP = "10.203.206.10";
+char* SERVER_IP = "10.203.159.129";
 int result = 0;
 
 using namespace std;
@@ -57,13 +57,14 @@ int main(int argc, char **argv)
 	else
 		std::cout << "connected successfullly!" << std::endl;
 		
-	while(ros::ok)
+	while(ros::ok())
 	{
 		/*
 		 *@fuc: 使用recv()函数来接收服务器发送的消息
 		 */
 		recv(socket_cli, recvbuf, sizeof(recvbuf), 0);
 		printf("server message: %s\n", recvbuf);
+		memset(recvbuf, 0, sizeof(recvbuf)); //上一次的消息接收到之后数组置0
 	}
 	/*
 	 *@fuc: 关闭连接

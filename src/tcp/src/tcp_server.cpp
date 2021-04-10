@@ -66,7 +66,7 @@ int main (int argc, char** argv)
     addrlen = sizeof(client);
     
     //不断监听客户端请求
-	while(ros::ok)
+	while(ros::ok())
 	{
 		connectfd = accept(listenfd,(struct sockaddr *)&client,&addrlen);
 		if(connectfd < 0)
