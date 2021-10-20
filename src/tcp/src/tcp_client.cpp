@@ -1,75 +1,75 @@
 #include <ros/ros.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <string.h>
-#include <sys/socket.h>
-#include <sys/types.h>
 #include <unistd.h>
-#include <arpa/inet.h>
+#include <string.h>
+#include <sys/types.h>
+#include <sys/socket.h>
 #include <netinet/in.h>
-#include <fcntl.h>
-#include <sys/shm.h>
+#include <netdb.h> 
+#include "std_msgs/String.h"
 
-#define    MYPORT     8081   //端口号
-#define    BUF_SIZE   1024   //数据缓冲区最大长度
+#define MESSAGE_FREQ 1
 
-char* SERVER_IP = "10.203.159.129";
-int result = 0;
-
-using namespace std;
-
-int main(int argc, char **argv)
-{
-	ros::init(argc, argv, "client_node");
-	ros::NodeHandle n;
-	
-	char recvbuf[BUF_SIZE];
-	
-	/*
-	 *@fuc: socket()创建套节字
-	 *
-	 */
-	int socket_cli = socket(AF_INET, SOCK_STREAM, 0);
-	if(socket_cli < 0)
-	{
-		std::cout << "socket() error\n";
-		return -1;
-	}
-	
-	/*
-	 *@fuc: 服务器端IP4地址信息,struct关键字可不写
-	 *@fuc: 初始化sever地址信息   
-	 */
-	struct sockaddr_in sev_addr;  
-	memset(&sev_addr, 0, sizeof(sev_addr));
-	sev_addr.sin_family      = AF_INET;
-	sev_addr.sin_port        = htons(MYPORT);
-	sev_addr.sin_addr.s_addr = inet_addr(SERVER_IP);
-	std::cout << "connecting..." << std::endl;
-	/*
-	 *@fuc: 使用connect()函数来配置套节字,建立一个与TCP服务器的连接
-	 */
-	if(connect(socket_cli, (struct sockaddr*) &sev_addr, sizeof(sev_addr)) < 0)
-	{ 
-		std::cout << "connect error" << std::endl;
-		return -1;
-	}
-	else
-		std::cout << "connected successfullly!" << std::endl;
-		
-	while(ros::ok())
-	{
-		/*
-		 *@fuc: 使用recv()函数来接收服务器发送的消息
-		 */
-		recv(socket_cli, recvbuf, sizeof(recvbuf), 0);
-		printf("server message: %s\n", recvbuf);
-		memset(recvbuf, 0, sizeof(recvbuf)); //上一次的消息接收到之后数组置0
-	}
-	/*
-	 *@fuc: 关闭连接
-	 */
-	close(socket_cli);
-	return 0;
+void error(const char *msg) {
+    perror(msg);
+    exit(0);
 }
 
+class Listener {
+private:
+    char topic_message[256] = { 0 };
+public:
+    void callback(const std_msgs::String::ConstPtr& msg);
+    char* getMessageValue();
+};
+
+void Listener::callback(const std_msgs::String::ConstPtr& msg) {
+    memset(topic_message, 0, 256);
+    strcpy(topic_message, msg->data.c_str());
+//    ROS_INFO("I heard:[%s]", msg->data.c_str());
+}
+
+char* Listener::getMessageValue() {
+    return topic_message;
+}
+
+int main(int argc, char *argv[]) {
+	ros::init(argc, argv, "client_node");
+	ros::NodeHandle nh("~");//node之间的需要私有句柄获取
+    ros::Rate loop_rate(MESSAGE_FREQ); // set the rate as defined in the macro MESSAGE_FREQ
+	Listener listener;
+    ros::Subscriber client_sub = nh.subscribe("/client_messages", 1, &Listener::callback, &listener);
+    int sockfd, portno, n, choice = 1;
+    struct sockaddr_in serv_addr;
+    char *server = "192.168.6.235";
+    char buffer[256];
+    
+    nh.param<int>("portno", portno, 8080);
+    sockfd = socket(AF_INET, SOCK_STREAM, 0);
+    if (sockfd < 0) 
+        error("ERROR opening socket");
+    bzero((char *) &serv_addr, sizeof(serv_addr));
+    serv_addr.sin_family = AF_INET;
+    serv_addr.sin_addr.s_addr = INADDR_ANY;
+    serv_addr.sin_port = htons(portno);
+    if (connect(sockfd,(struct sockaddr *) &serv_addr,sizeof(serv_addr)) < 0) 
+        error("ERROR connecting");
+    std::cout << "How do you want the client to behave?:\n1. Be able to send messages manually\n2. Subscribe to /client_messages and send whatever's available there\nYour choice:";
+    std::cin >> choice;
+	while(ros::ok()) {
+        bzero(buffer,256);
+        if (choice == 1) {
+            printf("Please enter the message: ");
+            fgets(buffer,255,stdin);
+        } else if (choice == 2) {
+            strcpy(buffer, listener.getMessageValue());
+            loop_rate.sleep();
+        }
+	    n = write(sockfd,buffer,strlen(buffer));//发送给服务器端进行请求
+	    if (n < 0) 
+	         error("ERROR writing to socket");
+	    ros::spinOnce();
+	}
+	return 0;
+}

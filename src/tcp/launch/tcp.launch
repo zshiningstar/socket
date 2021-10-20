@@ -1,9 +1,12 @@
 <!-- -->
 <launch>
+    <arg name="port" default="80805"/> 
 	<node pkg="tcp" type="server_node" name="server_node" output="screen">
+	    <param name="portno" value="$(arg port)"/>
 	</node>
 	
 	<node pkg="tcp" type="client_node" name="client_node" output="screen">
+	    <param name="portno" value="$(arg port)"/>
 	</node>
 
 </launch>
