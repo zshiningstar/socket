@@ -1,0 +1,12 @@
+<!-- -->
+<launch>
+    <arg name="port" default="80805"/> 
+	<node pkg="udp" type="udp_ser" name="server_node" output="screen">
+	    <param name="portno" value="$(arg port)"/>
+	</node>
+	
+	<node pkg="udp" type="udp_ser" name="client_node" output="screen">
+	    <param name="portno" value="$(arg port)"/>
+	</node>
+
+</launch>
